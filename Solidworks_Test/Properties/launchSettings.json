@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Solidworks_Test": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
