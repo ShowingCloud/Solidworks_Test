@@ -6,55 +6,42 @@ namespace Solidworks_Test
     {
         public static void ShowDimensionForFeature(SldWorks.Feature feature)
         {
-            var thisDisplayDimension = (SldWorks.DisplayDimension)feature.GetFirstDisplayDimension();
+            var thisDisplayDimension = feature.GetFirstDisplayDimension() as SldWorks.DisplayDimension;
 
             while (thisDisplayDimension != null)
             {
-                var dimension = (SldWorks.Dimension)thisDisplayDimension.GetDimension();
+                var dimension = thisDisplayDimension.GetDimension() as SldWorks.Dimension;
 
                 Debug.Print($"--- Feature {feature.Name} Dimension --> " + thisDisplayDimension.GetNameForSelection() + " --> " + dimension.Value);
 
-                thisDisplayDimension = (SldWorks.DisplayDimension)feature.GetNextDisplayDimension(thisDisplayDimension);
+                thisDisplayDimension = feature.GetNextDisplayDimension(thisDisplayDimension) as SldWorks.DisplayDimension;
             }
         }
 
         public static void TraverseFeatures(SldWorks.Feature thisFeature, bool isTopLevel, bool isShowDimension = false)
         {
-            SldWorks.Feature curFeature = default(SldWorks.Feature);
-            curFeature = thisFeature;
+            SldWorks.Feature curFeature = thisFeature;
 
             while (curFeature != null)
             {
                 Debug.Print("--- Feature --> " + curFeature.Name);
                 if (isShowDimension == true) ShowDimensionForFeature(curFeature);
 
-                SldWorks.Feature subFeature = default(SldWorks.Feature);
-                subFeature = (SldWorks.Feature)curFeature.GetFirstSubFeature();
-
+                SldWorks.Feature subFeature = curFeature.GetFirstSubFeature() as SldWorks.Feature;
                 while (subFeature != null)
                 {
                     TraverseFeatures(subFeature, false);
-                    SldWorks.Feature nextSubFeature = default(SldWorks.Feature);
-                    nextSubFeature = (SldWorks.Feature)subFeature.GetNextSubFeature();
-                    subFeature = nextSubFeature;
-                    nextSubFeature = null;
+                    subFeature = subFeature.GetNextSubFeature() as SldWorks.Feature;
                 }
-
-                subFeature = null;
-
-                SldWorks.Feature nextFeature = default(SldWorks.Feature);
 
                 if (isTopLevel)
                 {
-                    nextFeature = (SldWorks.Feature)curFeature.GetNextFeature();
+                    curFeature = curFeature.GetNextFeature() as SldWorks.Feature;
                 }
                 else
                 {
-                    nextFeature = null;
+                    curFeature = null;
                 }
-
-                curFeature = nextFeature;
-                nextFeature = null;
             }
         }
 
@@ -70,7 +57,7 @@ namespace Solidworks_Test
                 sPadStr = sPadStr + "*";
             }
             swCompXform = swComp.Transform2;
-            SldWorks.ModelDoc2 swModel = (SldWorks.ModelDoc2)swComp.GetModelDoc2();
+            SldWorks.ModelDoc2 swModel = swComp.GetModelDoc2() as SldWorks.ModelDoc2;
 
             if (swCompXform != null)
             {
@@ -98,21 +85,15 @@ namespace Solidworks_Test
 
                     if (setcolor == true)
                     {
-                        double[] matPropVals = (double[])swModel.MaterialPropertyValues;
+                        double[] matPropVals = swModel.MaterialPropertyValues as double[];
                         System.Random rnd = new System.Random();
 
-                        var tempC = default(System.Drawing.Color);
-                        if (System.IO.Path.GetFileNameWithoutExtension(swModel.GetPathName()).Contains("m1"))
-                        {
-                            tempC = System.Drawing.Color.Red;
-                        }
-                        else
-                        {
-                            tempC = System.Drawing.Color.FromArgb(
+                        var tempC = System.IO.Path.GetFileNameWithoutExtension(swModel.GetPathName()).Contains("m1") ?
+                            System.Drawing.Color.Red :
+                            System.Drawing.Color.FromArgb(
                                 rnd.Next(0, 255),
                                 rnd.Next(0, 255),
                                 rnd.Next(0, 255));
-                        }
                         matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
                         matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
                         matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
@@ -123,10 +104,10 @@ namespace Solidworks_Test
                 }
             }
 
-            vChild = (object[])swComp.GetChildren();
+            vChild = swComp.GetChildren() as object[];
             for (long i = 0; i <= (vChild.Length - 1); i++)
             {
-                swChildComp = (SldWorks.Component2)vChild[i];
+                swChildComp = vChild[i] as SldWorks.Component2;
                 TraverseCompXform(swChildComp, nLevel + 1, setcolor);
             }
         }
@@ -139,20 +120,20 @@ namespace Solidworks_Test
             Debug.Print("Info: " + swModel.GetCustomInfoValue("", "Project"));
 
             SldWorks.Configuration swConfig = default(SldWorks.Configuration);
-            foreach (var name in (string[])swModel.GetConfigurationNames())
+            foreach (var name in swModel.GetConfigurationNames() as string[])
             {
-                swConfig = (SldWorks.Configuration)swModel.GetConfigurationByName(name);
+                swConfig = swModel.GetConfigurationByName(name) as SldWorks.Configuration;
                 var manager = swModel.Extension.CustomPropertyManager[name];
                 string code = manager.Get("Code");
                 var desc = manager.Get("Description");
                 Debug.Print("   Name of configuration ---> " + name + " Code = " + code + "Desc =" + desc);
             }
 
-            SldWorks.Feature swFeature = (SldWorks.Feature)swModel.FirstFeature();
+            SldWorks.Feature swFeature = swModel.FirstFeature() as SldWorks.Feature;
             TraverseFeatures(swFeature, true);
 
-            swConfig = (SldWorks.Configuration)swModel.GetActiveConfiguration();
-            SldWorks.Component2 swRootComp = (SldWorks.Component2)swConfig.GetRootComponent();
+            swConfig = swModel.GetActiveConfiguration() as SldWorks.Configuration;
+            SldWorks.Component2 swRootComp = swConfig.GetRootComponent() as SldWorks.Component2;
             TraverseCompXform(swRootComp, 0);
 
             SldWorks.DrawingDoc swDraw = swModel as SldWorks.DrawingDoc;
