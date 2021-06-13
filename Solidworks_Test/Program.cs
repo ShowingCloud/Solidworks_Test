@@ -137,6 +137,59 @@ namespace Solidworks_Test
             TraverseCompXform(swRootComp, 0);
 
             SldWorks.DrawingDoc swDraw = swModel as SldWorks.DrawingDoc;
+            var sheetNames = swDraw.GetSheetNames() as object[];
+
+            string k3Name = "";
+            foreach (var kName in sheetNames)
+            {
+                if ((kName as string).Contains("k3"))
+                {
+                    k3Name = kName as string;
+                }
+            }
+            bool bActSheet = swDraw.ActivateSheet(k3Name);
+
+            SldWorks.Sheet drwSheet = swDraw.GetCurrentSheet() as SldWorks.Sheet;
+            object[] views = drwSheet.GetViews() as object[];
+
+            foreach (object vView in views)
+            {
+                var ss = vView as SldWorks.View;
+                Debug.Print("--- View --> " + ss.GetName2());
+            }
+            swModel.ShowNamedView2("*Front", (int)SwConst.swStandardViews_e.swFrontView);
+
+            SldWorks.SelectionMgr modelSel = swModel.ISelectionManager;
+            SldWorks.View actionView = modelSel.GetSelectedObject5(1) as SldWorks.View;
+            var noteCount = actionView.GetNoteCount();
+
+            System.Collections.Generic.List<SldWorks.Note> AllNotes = new System.Collections.Generic.List<SldWorks.Note>();
+            if (noteCount > 0)
+            {
+                SldWorks.Note note = actionView.GetFirstNote() as SldWorks.Note;
+                Debug.Print("--- Note Count --> " + noteCount.ToString());
+                try {
+                    Debug.Print((((note.GetAnnotation() as SldWorks.Annotation)
+                    .GetAttachedEntities3()[0] as SldWorks.Entity)
+                    .GetComponent() as SldWorks.Component2)
+                    .Name2);        
+                }
+                catch { };
+                Debug.Print("--- Note --> " + note.GetText());
+                AllNotes.Add(note);
+
+                var leaderInfo = note.GetLeaderInfo();
+                for (int k = 0; k < noteCount - 1; k++)
+                {
+                    note = (SldWorks.Note)note.GetNext();
+                    Debug.Print("--- Note -->" + note.GetText());
+                    AllNotes.Add(note);
+                }
+
+                swModel.EditRebuild3();
+                swModel.EditDelete();
+            }
+
             SldWorks.View swView = swDraw.GetFirstView(), swBaseView;
 
             Debug.Print("File = " + swModel.GetPathName());
