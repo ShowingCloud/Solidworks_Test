@@ -115,53 +115,71 @@ namespace Solidworks_Test
         static void Main(string[] args)
         {
             SldWorks.SldWorks swApp = new SldWorks.SldWorks();
-            int err = 0;
+            int err = 0, warn = 0;
             SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\test.IGS", "r", null, ref err);
-            Debug.Print("Info: " + swModel.GetCustomInfoValue("", "Project"));
+            /*SldWorks.ModelDoc2 swModel = swApp.OpenDoc6("C:\\Users\\wgq\\myNewPart.SLDPRT",
+                (int)SwConst.swDocumentTypes_e.swDocPART,
+                (int)SwConst.swOpenDocOptions_e.swOpenDocOptions_ReadOnly,
+                null, ref err, ref warn);*/
+            if (swModel.GetCustomInfoValue("", "Project") != null)
+                Debug.Print("Info: " + swModel.GetCustomInfoValue("", "Project"));
 
             SldWorks.Configuration swConfig = default(SldWorks.Configuration);
-            foreach (var name in swModel.GetConfigurationNames() as string[])
-            {
-                swConfig = swModel.GetConfigurationByName(name) as SldWorks.Configuration;
-                var manager = swModel.Extension.CustomPropertyManager[name];
-                string code = manager.Get("Code");
-                var desc = manager.Get("Description");
-                Debug.Print("   Name of configuration ---> " + name + " Code = " + code + "Desc =" + desc);
-            }
+            if (swModel.GetConfigurationNames() != null)
+                foreach (var name in swModel.GetConfigurationNames() as string[])
+                {
+                    swConfig = swModel.GetConfigurationByName(name) as SldWorks.Configuration;
+                    var manager = swModel.Extension.CustomPropertyManager[name];
+                    string code = manager.Get("Code");
+                    var desc = manager.Get("Description");
+                    Debug.Print("   Name of configuration ---> " + name + " Code = " + code + "Desc =" + desc);
+                }
 
             SldWorks.Feature swFeature = swModel.FirstFeature() as SldWorks.Feature;
-            TraverseFeatures(swFeature, true);
+            if (swFeature != null)
+                TraverseFeatures(swFeature, true);
 
             swConfig = swModel.GetActiveConfiguration() as SldWorks.Configuration;
-            SldWorks.Component2 swRootComp = swConfig.GetRootComponent() as SldWorks.Component2;
-            TraverseCompXform(swRootComp, 0);
+            if (swConfig != null)
+            {
+                SldWorks.Component2 swRootComp = swConfig.GetRootComponent() as SldWorks.Component2;
+                if (swRootComp != null)
+                    TraverseCompXform(swRootComp, 0);
+            }
 
             SldWorks.DrawingDoc swDraw = swModel as SldWorks.DrawingDoc;
-            var sheetNames = swDraw.GetSheetNames() as object[];
-
-            string k3Name = "";
-            foreach (var kName in sheetNames)
+            if (swDraw != null)
             {
-                if ((kName as string).Contains("k3"))
+                var sheetNames = swDraw.GetSheetNames() as object[];
+
+                string k3Name = "";
+                foreach (var kName in sheetNames)
+                    if ((kName as string).Contains("k3"))
+                        k3Name = kName as string;
+
+                bool bActSheet = swDraw.ActivateSheet(k3Name);
+
+                SldWorks.Sheet drwSheet = swDraw.GetCurrentSheet() as SldWorks.Sheet;
+                if (drwSheet != null)
                 {
-                    k3Name = kName as string;
+                    object[] views = drwSheet.GetViews() as object[];
+
+                    if (views != null)
+                        foreach (object vView in views)
+                        {
+                            var ss = vView as SldWorks.View;
+                            Debug.Print("--- View --> " + ss.GetName2());
+                        }
                 }
-            }
-            bool bActSheet = swDraw.ActivateSheet(k3Name);
-
-            SldWorks.Sheet drwSheet = swDraw.GetCurrentSheet() as SldWorks.Sheet;
-            object[] views = drwSheet.GetViews() as object[];
-
-            foreach (object vView in views)
-            {
-                var ss = vView as SldWorks.View;
-                Debug.Print("--- View --> " + ss.GetName2());
             }
             swModel.ShowNamedView2("*Front", (int)SwConst.swStandardViews_e.swFrontView);
 
             SldWorks.SelectionMgr modelSel = swModel.ISelectionManager;
             SldWorks.View actionView = modelSel.GetSelectedObject5(1) as SldWorks.View;
-            var noteCount = actionView.GetNoteCount();
+
+            var noteCount = 0;
+            if (actionView != null)
+                noteCount = actionView.GetNoteCount();
 
             System.Collections.Generic.List<SldWorks.Note> AllNotes = new System.Collections.Generic.List<SldWorks.Note>();
             if (noteCount > 0)
@@ -190,21 +208,24 @@ namespace Solidworks_Test
                 swModel.EditDelete();
             }
 
-            SldWorks.View swView = swDraw.GetFirstView(), swBaseView;
-
-            Debug.Print("File = " + swModel.GetPathName());
-
-            while(swView != null)
+            if (swDraw != null)
             {
-                swBaseView = swView.GetBaseView();
-                Debug.Print("  " + swView.Name);
+                SldWorks.View swView = swDraw.GetFirstView(), swBaseView;
 
-                if(swBaseView != null)
+                Debug.Print("File = " + swModel.GetPathName());
+
+                while (swView != null)
                 {
-                    Debug.Print("  --> ", swBaseView.Name);
-                }
+                    swBaseView = swView.GetBaseView();
+                    Debug.Print("  " + swView.Name);
 
-                swView = swView.GetNextView();
+                    if (swBaseView != null)
+                    {
+                        Debug.Print("  --> ", swBaseView.Name);
+                    }
+
+                    swView = swView.GetNextView();
+                }
             }
 
             swApp.ExitApp();
