@@ -122,7 +122,7 @@ namespace Solidworks_Test
                 (int)SwConst.swOpenDocOptions_e.swOpenDocOptions_ReadOnly,
                 null, ref err, ref warn);*/
             if (swModel.GetCustomInfoValue("", "Project") != null)
-                Debug.Print("Info: " + swModel.GetCustomInfoValue("", "Project"));
+                Debug.Print("--- 1. Info --> " + swModel.GetCustomInfoValue("", "Project"));
 
             SldWorks.Configuration swConfig = default(SldWorks.Configuration);
             if (swModel.GetConfigurationNames() != null)
@@ -132,44 +132,59 @@ namespace Solidworks_Test
                     var manager = swModel.Extension.CustomPropertyManager[name];
                     string code = manager.Get("Code");
                     var desc = manager.Get("Description");
-                    Debug.Print("   Name of configuration ---> " + name + " Code = " + code + "Desc =" + desc);
+                    Debug.Print("--- 2. Name of configuration ---> " + name + " Code = " + code + "Desc =" + desc);
                 }
 
             SldWorks.Feature swFeature = swModel.FirstFeature() as SldWorks.Feature;
             if (swFeature != null)
+            {
+                Debug.Print("--- 3. Features ---");
                 TraverseFeatures(swFeature, true);
+            }
 
             swConfig = swModel.GetActiveConfiguration() as SldWorks.Configuration;
             if (swConfig != null)
             {
+                Debug.Print("--- 4. Active Configuration ---");
                 SldWorks.Component2 swRootComp = swConfig.GetRootComponent() as SldWorks.Component2;
                 if (swRootComp != null)
+                {
+                    Debug.Print("--- 4.1. Root Component ---");
                     TraverseCompXform(swRootComp, 0);
+                }
             }
 
             SldWorks.DrawingDoc swDraw = swModel as SldWorks.DrawingDoc;
             if (swDraw != null)
             {
+                Debug.Print("--- 5. Drawing Doc ---");
                 var sheetNames = swDraw.GetSheetNames() as object[];
 
                 string k3Name = "";
                 foreach (var kName in sheetNames)
+                {
+                    Debug.Print("--- Sheet Name ---> " + kName);
                     if ((kName as string).Contains("k3"))
                         k3Name = kName as string;
+                }
 
                 bool bActSheet = swDraw.ActivateSheet(k3Name);
 
                 SldWorks.Sheet drwSheet = swDraw.GetCurrentSheet() as SldWorks.Sheet;
                 if (drwSheet != null)
                 {
+                    Debug.Print("--- 5.1. Current Sheet ---");
                     object[] views = drwSheet.GetViews() as object[];
 
                     if (views != null)
+                    {
+                        Debug.Print("--- 5.2. Get Views ---");
                         foreach (object vView in views)
                         {
                             var ss = vView as SldWorks.View;
                             Debug.Print("--- View --> " + ss.GetName2());
                         }
+                    }
                 }
             }
             swModel.ShowNamedView2("*Front", (int)SwConst.swStandardViews_e.swFrontView);
@@ -179,49 +194,54 @@ namespace Solidworks_Test
 
             var noteCount = 0;
             if (actionView != null)
+            {
+                Debug.Print("--- 6. Selected Object ---");
                 noteCount = actionView.GetNoteCount();
+            }
 
-            System.Collections.Generic.List<SldWorks.Note> AllNotes = new System.Collections.Generic.List<SldWorks.Note>();
             if (noteCount > 0)
             {
-                SldWorks.Note note = actionView.GetFirstNote() as SldWorks.Note;
                 Debug.Print("--- Note Count --> " + noteCount.ToString());
-                try {
-                    Debug.Print((((note.GetAnnotation() as SldWorks.Annotation)
-                    .GetAttachedEntities3()[0] as SldWorks.Entity)
-                    .GetComponent() as SldWorks.Component2)
-                    .Name2);        
-                }
-                catch { };
-                Debug.Print("--- Note --> " + note.GetText());
-                AllNotes.Add(note);
-
-                var leaderInfo = note.GetLeaderInfo();
-                for (int k = 0; k < noteCount - 1; k++)
+                SldWorks.Note note = actionView.GetFirstNote() as SldWorks.Note;
+                if (note != null)
                 {
-                    note = (SldWorks.Note)note.GetNext();
-                    Debug.Print("--- Note -->" + note.GetText());
-                    AllNotes.Add(note);
+                    Debug.Print("--- 6.1. Notes ---");
+                    Debug.Print("--- Components ---> ");
+                    try
+                    {
+                        Debug.Print((((note.GetAnnotation() as SldWorks.Annotation)
+                        .GetAttachedEntities3()[0] as SldWorks.Entity)
+                        .GetComponent() as SldWorks.Component2)
+                        .Name2);
+                    }
+                    catch { };
+                    Debug.Print("--- Note --> " + note.GetText());
+
+                    //var leaderInfo = note.GetLeaderInfo();
+                    for (int k = 0; k < noteCount - 1; k++)
+                    {
+                        note = note.GetNext() as SldWorks.Note;
+                        Debug.Print("--- Note --> " + note.GetText());
+                    }
                 }
 
-                swModel.EditRebuild3();
-                swModel.EditDelete();
+                //swModel.EditRebuild3();
+                //swModel.EditDelete();
             }
 
             if (swDraw != null)
             {
+                Debug.Print("--- 7. Views ---");
                 SldWorks.View swView = swDraw.GetFirstView(), swBaseView;
-
-                Debug.Print("File = " + swModel.GetPathName());
 
                 while (swView != null)
                 {
                     swBaseView = swView.GetBaseView();
-                    Debug.Print("  " + swView.Name);
+                    Debug.Print("--- View ---> " + swView.Name);
 
                     if (swBaseView != null)
                     {
-                        Debug.Print("  --> ", swBaseView.Name);
+                        Debug.Print("--- Base View --> ", swBaseView.Name);
                     }
 
                     swView = swView.GetNextView();
