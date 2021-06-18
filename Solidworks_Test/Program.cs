@@ -224,14 +224,27 @@ namespace Solidworks_Test
                         Debug.Print("--- Note --> " + note.GetText());
                     }
                 }
+            }
 
-                //swModel.EditRebuild3();
-                //swModel.EditDelete();
+            Debug.Print("--- 7. Export ---");
+            Debug.Print("--- Model Type --> " + swModel.GetType());
+            SldWorks.ModelDocExtension swModExt = swModel.Extension;
+            if (swModel.GetType() == (int)SwConst.swDocumentTypes_e.swDocPART || swModel.GetType() == (int)SwConst.swDocumentTypes_e.swDocASSEMBLY)
+            {
+                var setRes = swModel.Extension.SetUserPreferenceString(16, 0, "CustomerCS");
+                swApp.SetUserPreferenceIntegerValue((int)SwConst.swUserPreferenceIntegerValue_e.swParasolidOutputVersion, (int)SwConst.swParasolidOutputVersion_e.swParasolidOutputVersion_270);
+                swModExt.SaveAs(@"C:\Users\wgq\export.x_t", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
+            }
+            else if (swModel.GetType() == (int)SwConst.swDocTemplateTypes_e.swDocTemplateTypeDRAWING)
+            {
+                swApp.SetUserPreferenceIntegerValue((int)SwConst.swUserPreferenceIntegerValue_e.swDxfVersion, 2);
+                swModel.SetUserPreferenceToggle(196, false);
+                swModExt.SaveAs(@"C:\Users\wgq\export.dxf", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
             }
 
             if (swDraw != null)
             {
-                Debug.Print("--- 7. Views ---");
+                Debug.Print("--- 99. Views ---");
                 SldWorks.View swView = swDraw.GetFirstView(), swBaseView;
 
                 while (swView != null)
