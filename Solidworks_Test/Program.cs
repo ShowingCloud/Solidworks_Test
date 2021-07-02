@@ -116,11 +116,22 @@ namespace Solidworks_Test
         {
             SldWorks.SldWorks swApp = new SldWorks.SldWorks();
             int err = 0, warn = 0;
+
             //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\test.IGS", "r", null, ref err);
-            SldWorks.ModelDoc2 swModel = swApp.OpenDoc6("C:\\Users\\wgq\\myNewPart.SLDPRT",
+            SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
+                "C:\\Users\\wgq\\myNewPart.SLDPRT",
+                /*"C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",*/
                 (int)SwConst.swDocumentTypes_e.swDocPART,
                 (int)SwConst.swOpenDocOptions_e.swOpenDocOptions_ReadOnly,
                 null, ref err, ref warn);
+            if (swModel == null)
+            {
+                Debug.Print("--- Open File Failed ---");
+                swApp.ExitApp();
+                swApp = null;
+                return;
+            }
+
             if (swModel.GetCustomInfoValue("", "Project") != null)
                 Debug.Print("--- 1. Info --> " + swModel.GetCustomInfoValue("", "Project"));
 
@@ -260,6 +271,7 @@ namespace Solidworks_Test
                 }
 
                 swModel.EditSketch();
+                Debug.Print("--- Total Length --> " + totalLength * 1000);
                 swApp.SendMsgToUser("Total Length: " + totalLength * 1000);
             }
 
