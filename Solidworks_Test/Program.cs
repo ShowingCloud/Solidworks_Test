@@ -369,8 +369,8 @@ namespace Solidworks_Test
             swFeature = (swModel as SldWorks.PartDoc).FeatureByName("Bounding Box");
             if (swFeature == null)
             {
-                swFeature = swModel.FeatureManager.InsertGlobalBoundingBox((int)SwConst.swGlobalBoundingBoxFitOptions_e.swBoundingBoxType_BestFit, true, false, out int longstatus);
-                Debug.Print("--- longstatus --> " + longstatus);
+                swFeature = swModel.FeatureManager.InsertGlobalBoundingBox((int)SwConst.swGlobalBoundingBoxFitOptions_e.swBoundingBoxType_BestFit, true, false, out int status);
+                Debug.Print("--- status --> " + status);
             }
 
             swModel.SetUserPreferenceToggle((int)SwConst.swUserPreferenceToggle_e.swViewDispGlobalBBox, true);
