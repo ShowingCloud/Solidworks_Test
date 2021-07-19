@@ -122,11 +122,11 @@ namespace Solidworks_Test
                 "C:\\Users\\wgq\\myNewPart.SLDPRT",
                 /*"C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",*/
                 (int)SwConst.swDocumentTypes_e.swDocPART,
-                (int)SwConst.swOpenDocOptions_e.swOpenDocOptions_ReadOnly,
+                (int)SwConst.swOpenDocOptions_e.swOpenDocOptions_Silent /* .swOpenDocOptions_ReadOnly */,
                 null, ref err, ref warn);
             if (swModel == null)
             {
-                Debug.Print("--- Open File Failed ---");
+                Debug.Print("--- !!! Open File Failed --- error --> " + err + " --- warning --> " + warn);
                 swApp.ExitApp();
                 swApp = null;
                 return;
@@ -274,6 +274,61 @@ namespace Solidworks_Test
                 Debug.Print("--- Total Length --> " + totalLength * 1000);
                 swApp.SendMsgToUser("Total Length: " + totalLength * 1000);
             }
+
+            var OnSaveToStorage = new System.Func<int>(() =>
+            {
+                System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", true) as System.Runtime.InteropServices.ComTypes.IStream;
+
+                byte[] data = System.Text.Encoding.Unicode.GetBytes("Save String");
+                iStr.Write(data, data.Length, System.IntPtr.Zero);
+
+                swModel.IRelease3rdPartyStorage("Tool.Name");
+                Debug.Print("--- 9.2. Wrote in Callback ---");
+
+                return 0;
+            });
+
+            Debug.Print("--- 9. Write Third Party Data ---");
+            switch (swModel.GetType())
+            {
+                case (int)SwConst.swDocumentTypes_e.swDocPART:
+                    (swModel as SldWorks.PartDoc).SaveToStorageNotify += new SldWorks.DPartDocEvents_SaveToStorageNotifyEventHandler(OnSaveToStorage);
+                    Debug.Print("--- 9.1. Writing Part ---");
+                    break;
+                case (int)SwConst.swDocumentTypes_e.swDocASSEMBLY:
+                    (swModel as SldWorks.AssemblyDoc).SaveToStorageNotify += new SldWorks.DAssemblyDocEvents_SaveToStorageNotifyEventHandler(OnSaveToStorage);
+                    Debug.Print("--- 9.1. Writing Assembly ---");
+                    break;
+                case (int)SwConst.swDocumentTypes_e.swDocDRAWING:
+                    (swModel as SldWorks.DrawingDoc).SaveToStorageNotify += new SldWorks.DDrawingDocEvents_SaveToStorageNotifyEventHandler(OnSaveToStorage);
+                    Debug.Print("--- 9.1. Writing Drawing ---");
+                    break;
+            }
+            //swModel.SetSaveFlag();
+            if (!swModel.Save3((int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, ref err, ref warn))
+            {
+                Debug.Print("--- !!! Failed to save model --- error --> " + err + " --- warning --> " + warn);
+            }
+            Debug.Print("--- Save Completed ---" /* "--- Completed. Please save file. ---" */);
+
+            Debug.Print("--- 9.3. Read Third Party Data ---");
+            System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", false) as System.Runtime.InteropServices.ComTypes.IStream;
+            if (iStr != null)
+            {
+                Debug.Print("--- 9.4. Got Data ---");
+
+                System.Runtime.InteropServices.ComTypes.STATSTG statstg;
+                iStr.Stat(out statstg, 1 /* STATSFLAG_NONAME */);
+
+                long length = statstg.cbSize;
+                byte[] data = new byte[length];
+                System.IntPtr bytesRead = default(System.IntPtr);
+
+                iStr.Read(data, (int)length, bytesRead);
+                string strData = System.Text.Encoding.Unicode.GetString(data);
+                Debug.Print("--- Data --> " + strData);
+            }
+            swModel.IRelease3rdPartyStorage("Tool.Name");
 
             if (swDraw != null)
             {
