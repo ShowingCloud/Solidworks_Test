@@ -119,14 +119,14 @@ namespace Solidworks_Test
 
             //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\test.IGS", "r", null, ref err);
             SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
-                "C:\\Users\\wgq\\myNewPart.SLDPRT",
-                /*"C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",*/
+                /* "C:\\Users\\wgq\\myNewPart.SLDPRT", */
+                "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",
                 (int)SwConst.swDocumentTypes_e.swDocPART,
-                (int)SwConst.swOpenDocOptions_e.swOpenDocOptions_Silent /* .swOpenDocOptions_ReadOnly */,
+                (int)SwConst.swOpenDocOptions_e/* .swOpenDocOptions_Silent */.swOpenDocOptions_ReadOnly,
                 null, ref err, ref warn);
             if (swModel == null)
             {
-                Debug.Print("--- !!! Open File Failed --- error --> " + err + " --- warning --> " + warn);
+                Debug.Print("--- !!! Open File Failed --> error --> " + err + " warning --> " + warn);
                 swApp.ExitApp();
                 swApp = null;
                 return;
@@ -280,7 +280,7 @@ namespace Solidworks_Test
 
                 swModel.EditSketch();
                 Debug.Print("--- Total Length --> " + totalLength * 1000);
-                swApp.SendMsgToUser("Total Length: " + totalLength * 1000);
+                //swApp.SendMsgToUser("Total Length: " + totalLength * 1000);
             }
 
 
@@ -314,11 +314,11 @@ namespace Solidworks_Test
                     break;
             }
             //swModel.SetSaveFlag();
-            if (!swModel.Save3((int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, ref err, ref warn))
-            {
-                Debug.Print("--- !!! Failed to save model --- error --> " + err + " --- warning --> " + warn);
+            if (!swModel.Save3((int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, ref err, ref warn)) {
+                Debug.Print("--- !!! Failed to save model ---> error --> " + err + " warning --> " + warn);
+            } else {
+                Debug.Print("--- Save Completed ---" /* "--- Completed. Please save file. ---" */);
             }
-            Debug.Print("--- Save Completed ---" /* "--- Completed. Please save file. ---" */);
 
             Debug.Print("--- 9.3. Read Third Party Data ---");
             System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", false) as System.Runtime.InteropServices.ComTypes.IStream;
@@ -361,6 +361,29 @@ namespace Solidworks_Test
                 userProgressBar.UpdateTitle("Progress --> " + position);
             }
             userProgressBar.End();
+
+
+            /* Advanced Component Selection part is intentionally skipped */
+
+
+            swFeature = (swModel as SldWorks.PartDoc).FeatureByName("Bounding Box");
+            if (swFeature == null)
+            {
+                swFeature = swModel.FeatureManager.InsertGlobalBoundingBox((int)SwConst.swGlobalBoundingBoxFitOptions_e.swBoundingBoxType_BestFit, true, false, out int longstatus);
+                Debug.Print("--- longstatus --> " + longstatus);
+            }
+
+            swModel.SetUserPreferenceToggle((int)SwConst.swUserPreferenceToggle_e.swViewDispGlobalBBox, true);
+
+            SldWorks.Configuration configuration = swModel.GetActiveConfiguration();
+            SldWorks.CustomPropertyManager manager2 = swModel.Extension.get_CustomPropertyManager(configuration.Name);
+
+            manager2.Get3("Total Bounding Box Length", true, out string str, out string str2);
+            manager2.Get3("Total Bounding Box Width", true, out str, out string str3);
+            manager2.Get3("Total Bounding Box Thickness", true, out str, out string str4);
+
+            Debug.Print("--- 11. Bouding Box Size --> Length --> " + str2 + " Width --> " + str3 + " Thickness --> " + str4);
+
 
             if (swDraw != null)
             {
