@@ -132,8 +132,10 @@ namespace Solidworks_Test
                 return;
             }
 
+
             if (swModel.GetCustomInfoValue("", "Project") != null)
                 Debug.Print("--- 1. Info --> " + swModel.GetCustomInfoValue("", "Project"));
+
 
             SldWorks.Configuration swConfig = default(SldWorks.Configuration);
             if (swModel.GetConfigurationNames() != null)
@@ -146,12 +148,14 @@ namespace Solidworks_Test
                     Debug.Print("--- 2. Name of configuration ---> " + name + " Code = " + code + "Desc =" + desc);
                 }
 
+
             SldWorks.Feature swFeature = swModel.FirstFeature() as SldWorks.Feature;
             if (swFeature != null)
             {
                 Debug.Print("--- 3. Features ---");
                 TraverseFeatures(swFeature, true);
             }
+
 
             swConfig = swModel.GetActiveConfiguration() as SldWorks.Configuration;
             if (swConfig != null)
@@ -164,6 +168,7 @@ namespace Solidworks_Test
                     TraverseCompXform(swRootComp, 0);
                 }
             }
+
 
             SldWorks.DrawingDoc swDraw = swModel as SldWorks.DrawingDoc;
             if (swDraw != null)
@@ -199,6 +204,7 @@ namespace Solidworks_Test
                 }
             }
             swModel.ShowNamedView2("*Front", (int)SwConst.swStandardViews_e.swFrontView);
+
 
             SldWorks.SelectionMgr modelSel = swModel.ISelectionManager;
             SldWorks.View actionView = modelSel.GetSelectedObject5(1) as SldWorks.View;
@@ -237,6 +243,7 @@ namespace Solidworks_Test
                 }
             }
 
+
             Debug.Print("--- 7. Export ---");
             Debug.Print("--- Model Type --> " + swModel.GetType());
             SldWorks.ModelDocExtension swModExt = swModel.Extension;
@@ -252,6 +259,7 @@ namespace Solidworks_Test
                 swModel.SetUserPreferenceToggle(196, false);
                 swModExt.SaveAs(@"C:\Users\wgq\export.dxf", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
             }
+
 
             if (swModExt.SelectByID2("Sketch1", "SKETCH", 0, 0, 0, false, 0, null, 0))
             {
@@ -274,6 +282,7 @@ namespace Solidworks_Test
                 Debug.Print("--- Total Length --> " + totalLength * 1000);
                 swApp.SendMsgToUser("Total Length: " + totalLength * 1000);
             }
+
 
             var OnSaveToStorage = new System.Func<int>(() =>
             {
@@ -329,6 +338,29 @@ namespace Solidworks_Test
                 Debug.Print("--- Data --> " + strData);
             }
             swModel.IRelease3rdPartyStorage("Tool.Name");
+
+
+            SldWorks.Frame swFrame = swApp.Frame();
+            swFrame.SetStatusBarText("Status Bar Text --> ");
+            SldWorks.UserProgressBar userProgressBar;
+            swApp.GetUserProgressBar(out userProgressBar);
+            userProgressBar.Start(0, 100, "Status");
+
+            int position = 0;
+            for (int i = 0; i <= 100; i++)
+            {
+                position = i * 10;
+
+                if (position == 100)
+                {
+                    position = 0;
+                    break;
+                }
+
+                userProgressBar.UpdateProgress(position);
+                userProgressBar.UpdateTitle("Progress --> " + position);
+            }
+            userProgressBar.End();
 
             if (swDraw != null)
             {
