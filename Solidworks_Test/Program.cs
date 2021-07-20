@@ -366,23 +366,27 @@ namespace Solidworks_Test
             /* Advanced Component Selection part is intentionally skipped */
 
 
-            swFeature = (swModel as SldWorks.PartDoc).FeatureByName("Bounding Box");
-            if (swFeature == null)
+            if (swModel.GetType() == (int)SwConst.swDocumentTypes_e.swDocPART)
             {
-                swFeature = swModel.FeatureManager.InsertGlobalBoundingBox((int)SwConst.swGlobalBoundingBoxFitOptions_e.swBoundingBoxType_BestFit, true, false, out int status);
-                Debug.Print("--- status --> " + status);
+                Debug.Print("--- 11. Bounding Box on Part Doc ---");
+                swFeature = (swModel as SldWorks.PartDoc).FeatureByName("Bounding Box");
+                if (swFeature == null)
+                {
+                    swFeature = swModel.FeatureManager.InsertGlobalBoundingBox((int)SwConst.swGlobalBoundingBoxFitOptions_e.swBoundingBoxType_BestFit, true, false, out int status);
+                    Debug.Print("--- status --> " + status);
+                }
+
+                swModel.SetUserPreferenceToggle((int)SwConst.swUserPreferenceToggle_e.swViewDispGlobalBBox, true);
+
+                SldWorks.Configuration configuration = swModel.GetActiveConfiguration();
+                SldWorks.CustomPropertyManager manager2 = swModel.Extension.get_CustomPropertyManager(configuration.Name);
+
+                manager2.Get3("Total Bounding Box Length", true, out string str, out string str2);
+                manager2.Get3("Total Bounding Box Width", true, out str, out string str3);
+                manager2.Get3("Total Bounding Box Thickness", true, out str, out string str4);
+
+                Debug.Print("--- 11.1. Bounding Box Size --> Length --> " + str2 + " Width --> " + str3 + " Thickness --> " + str4);
             }
-
-            swModel.SetUserPreferenceToggle((int)SwConst.swUserPreferenceToggle_e.swViewDispGlobalBBox, true);
-
-            SldWorks.Configuration configuration = swModel.GetActiveConfiguration();
-            SldWorks.CustomPropertyManager manager2 = swModel.Extension.get_CustomPropertyManager(configuration.Name);
-
-            manager2.Get3("Total Bounding Box Length", true, out string str, out string str2);
-            manager2.Get3("Total Bounding Box Width", true, out str, out string str3);
-            manager2.Get3("Total Bounding Box Thickness", true, out str, out string str4);
-
-            Debug.Print("--- 11. Bouding Box Size --> Length --> " + str2 + " Width --> " + str3 + " Thickness --> " + str4);
 
 
             if (swDraw != null)
