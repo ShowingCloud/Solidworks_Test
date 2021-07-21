@@ -120,7 +120,8 @@ namespace Solidworks_Test
             //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\test.IGS", "r", null, ref err);
             SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
                 /* "C:\\Users\\wgq\\myNewPart.SLDPRT", */
-                "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",
+                /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt", */
+                "C:\\Users\\wgq\\Source\\Repos\\CSharpAndSolidWorks\\CSharpAndSolidWorks\\TemplateModel\\Measure.sldprt",
                 (int)SwConst.swDocumentTypes_e.swDocPART,
                 (int)SwConst.swOpenDocOptions_e/* .swOpenDocOptions_Silent */.swOpenDocOptions_ReadOnly,
                 null, ref err, ref warn);
@@ -252,12 +253,14 @@ namespace Solidworks_Test
                 var setRes = swModel.Extension.SetUserPreferenceString(16, 0, "CustomerCS");
                 swApp.SetUserPreferenceIntegerValue((int)SwConst.swUserPreferenceIntegerValue_e.swParasolidOutputVersion, (int)SwConst.swParasolidOutputVersion_e.swParasolidOutputVersion_270);
                 swModExt.SaveAs(@"C:\Users\wgq\export.x_t", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
+                Debug.Print("--- Part or Assembly Exported ---");
             }
             else if (swModel.GetType() == (int)SwConst.swDocTemplateTypes_e.swDocTemplateTypeDRAWING)
             {
                 swApp.SetUserPreferenceIntegerValue((int)SwConst.swUserPreferenceIntegerValue_e.swDxfVersion, 2);
                 swModel.SetUserPreferenceToggle(196, false);
                 swModExt.SaveAs(@"C:\Users\wgq\export.dxf", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
+                Debug.Print("--- Drawing Exported ---");
             }
 
 
@@ -292,7 +295,7 @@ namespace Solidworks_Test
                 iStr.Write(data, data.Length, System.IntPtr.Zero);
 
                 swModel.IRelease3rdPartyStorage("Tool.Name");
-                Debug.Print("--- 9.2. Wrote in Callback ---");
+                Debug.Print("--- Wrote in Callback ---");
 
                 return 0;
             });
@@ -302,15 +305,15 @@ namespace Solidworks_Test
             {
                 case (int)SwConst.swDocumentTypes_e.swDocPART:
                     (swModel as SldWorks.PartDoc).SaveToStorageNotify += new SldWorks.DPartDocEvents_SaveToStorageNotifyEventHandler(OnSaveToStorage);
-                    Debug.Print("--- 9.1. Writing Part ---");
+                    Debug.Print("--- Writing Part ---");
                     break;
                 case (int)SwConst.swDocumentTypes_e.swDocASSEMBLY:
                     (swModel as SldWorks.AssemblyDoc).SaveToStorageNotify += new SldWorks.DAssemblyDocEvents_SaveToStorageNotifyEventHandler(OnSaveToStorage);
-                    Debug.Print("--- 9.1. Writing Assembly ---");
+                    Debug.Print("--- Writing Assembly ---");
                     break;
                 case (int)SwConst.swDocumentTypes_e.swDocDRAWING:
                     (swModel as SldWorks.DrawingDoc).SaveToStorageNotify += new SldWorks.DDrawingDocEvents_SaveToStorageNotifyEventHandler(OnSaveToStorage);
-                    Debug.Print("--- 9.1. Writing Drawing ---");
+                    Debug.Print("--- Writing Drawing ---");
                     break;
             }
             //swModel.SetSaveFlag();
@@ -320,11 +323,11 @@ namespace Solidworks_Test
                 Debug.Print("--- Save Completed ---" /* "--- Completed. Please save file. ---" */);
             }
 
-            Debug.Print("--- 9.3. Read Third Party Data ---");
+            Debug.Print("--- 9.1. Read Third Party Data ---");
             System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", false) as System.Runtime.InteropServices.ComTypes.IStream;
             if (iStr != null)
             {
-                Debug.Print("--- 9.4. Got Data ---");
+                Debug.Print("--- Got Data ---");
 
                 System.Runtime.InteropServices.ComTypes.STATSTG statstg;
                 iStr.Stat(out statstg, 1 /* STATSFLAG_NONAME */);
@@ -385,8 +388,16 @@ namespace Solidworks_Test
                 manager2.Get3("Total Bounding Box Width", true, out str, out string str3);
                 manager2.Get3("Total Bounding Box Thickness", true, out str, out string str4);
 
-                Debug.Print("--- 11.1. Bounding Box Size --> Length --> " + str2 + " Width --> " + str3 + " Thickness --> " + str4);
+                Debug.Print("--- Bounding Box Size --> Length --> " + str2 + " Width --> " + str3 + " Thickness --> " + str4);
             }
+
+
+            swModExt = swModel.Extension;
+            SldWorks.Measure swMeasure = swModExt.CreateMeasure();
+            swMeasure.ArcOption = 0;
+            bool stat = swMeasure.Calculate(null);
+            if (stat) { Debug.Print("--- 12. Measure Distance --> " + (swMeasure.Distance * 1000)); }
+            else { Debug.Print("--- 12. Measure Distance --> status --> " + stat); }
 
 
             if (swDraw != null)
