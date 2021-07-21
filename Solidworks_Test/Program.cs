@@ -121,8 +121,9 @@ namespace Solidworks_Test
             SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
                 /* "C:\\Users\\wgq\\myNewPart.SLDPRT", */
                 /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt", */
-                "C:\\Users\\wgq\\Source\\Repos\\CSharpAndSolidWorks\\CSharpAndSolidWorks\\TemplateModel\\Measure.sldprt",
-                (int)SwConst.swDocumentTypes_e.swDocPART,
+                /* "C:\\Users\\wgq\\Source\\Repos\\CSharpAndSolidWorks\\CSharpAndSolidWorks\\TemplateModel\\Measure.sldprt", */
+                "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\routing-pipes\\ball valve with flanges.sldasm",
+                (int)SwConst.swDocumentTypes_e.swDocASSEMBLY,
                 (int)SwConst.swOpenDocOptions_e/* .swOpenDocOptions_Silent */.swOpenDocOptions_ReadOnly,
                 null, ref err, ref warn);
             if (swModel == null)
@@ -399,6 +400,26 @@ namespace Solidworks_Test
             if (stat) { Debug.Print("--- 12. Measure Distance --> " + (swMeasure.Distance * 1000)); }
             else { Debug.Print("--- 12. Measure Distance --> status --> " + stat); }
 
+
+            swModExt.IncludeMassPropertiesOfHiddenBodies = false;
+            int massStatus = 0;
+            double[] massProperties = swModExt.GetMassProperties(1, ref massStatus);
+            if (massProperties != null)
+            {
+                Debug.Print("--- 13. Mass Properties -->");
+                Debug.Print("--- Center of Mass X --> " + massProperties[0]);
+                Debug.Print("--- Center of Mass Y --> " + massProperties[1]);
+                Debug.Print("--- Center of Mass Z --> " + massProperties[2]);
+                Debug.Print("--- Volume --> " + massProperties[3]);
+                Debug.Print("--- Area --> " + massProperties[4]);
+                Debug.Print("--- Mass --> " + massProperties[5]);
+                Debug.Print("--- Moment XX --> " + massProperties[6]);
+                Debug.Print("--- Moment YY --> " + massProperties[7]);
+                Debug.Print("--- Moment ZZ --> " + massProperties[8]);
+                Debug.Print("--- Moment XY --> " + massProperties[9]);
+                Debug.Print("--- Moment ZX --> " + massProperties[10]);
+                Debug.Print("--- Moment YZ --> " + massProperties[11]);
+            }
 
             if (swDraw != null)
             {
