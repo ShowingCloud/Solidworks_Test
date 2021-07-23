@@ -4,114 +4,6 @@ namespace Solidworks_Test
 {
     class Program
     {
-        public static void ShowDimensionForFeature(SldWorks.Feature feature)
-        {
-            var thisDisplayDimension = feature.GetFirstDisplayDimension() as SldWorks.DisplayDimension;
-
-            while (thisDisplayDimension != null)
-            {
-                var dimension = thisDisplayDimension.GetDimension() as SldWorks.Dimension;
-
-                Debug.Print($"--- Feature {feature.Name} Dimension --> " + thisDisplayDimension.GetNameForSelection() + " --> " + dimension.Value);
-
-                thisDisplayDimension = feature.GetNextDisplayDimension(thisDisplayDimension) as SldWorks.DisplayDimension;
-            }
-        }
-
-        public static void TraverseFeatures(SldWorks.Feature thisFeature, bool isTopLevel, bool isShowDimension = false)
-        {
-            SldWorks.Feature curFeature = thisFeature;
-
-            while (curFeature != null)
-            {
-                Debug.Print("--- Feature --> " + curFeature.Name);
-                if (isShowDimension == true) ShowDimensionForFeature(curFeature);
-
-                SldWorks.Feature subFeature = curFeature.GetFirstSubFeature() as SldWorks.Feature;
-                while (subFeature != null)
-                {
-                    TraverseFeatures(subFeature, false);
-                    subFeature = subFeature.GetNextSubFeature() as SldWorks.Feature;
-                }
-
-                if (isTopLevel)
-                {
-                    curFeature = curFeature.GetNextFeature() as SldWorks.Feature;
-                }
-                else
-                {
-                    curFeature = null;
-                }
-            }
-        }
-
-        public static void TraverseCompXform(SldWorks.Component2 swComp, long nLevel, bool setcolor = false)
-        {
-            object[] vChild;
-            SldWorks.Component2 swChildComp;
-            string sPadStr = "";
-            SldWorks.MathTransform swCompXform;
-
-            for (long i = 0; i < nLevel; i++)
-            {
-                sPadStr = sPadStr + "*";
-            }
-            swCompXform = swComp.Transform2;
-            SldWorks.ModelDoc2 swModel = swComp.GetModelDoc2() as SldWorks.ModelDoc2;
-
-            if (swCompXform != null)
-            {
-                try
-                {
-                    Debug.Print("--- Pad String --> " + sPadStr + " " + swComp.Name2);
-
-                    if (swComp.GetSelectByIDString() == "")
-                    {
-                        Debug.Print("--- Select ID --> " + swComp.GetSelectByIDString());
-                    }
-                }
-                catch
-                {
-                    Debug.Print("Exception catched");
-                }
-
-                if (swModel != null)
-                {
-                    Debug.Print("--- PartNum --> " + swModel.get_CustomInfo2(swComp.ReferencedConfiguration, "PartNum"));
-                    Debug.Print("--- Name2 --> " + swComp.Name2);
-                    Debug.Print("--- Name --> " + swModel.GetPathName());
-                    Debug.Print("--- ConfigName --> " + swComp.ReferencedConfiguration);
-                    Debug.Print("--- ComponentRef --> " + swComp.ComponentReference);
-
-                    if (setcolor == true)
-                    {
-                        double[] matPropVals = swModel.MaterialPropertyValues as double[];
-                        System.Random rnd = new System.Random();
-
-                        var tempC = System.IO.Path.GetFileNameWithoutExtension(swModel.GetPathName()).Contains("m1") ?
-                            System.Drawing.Color.Red :
-                            System.Drawing.Color.FromArgb(
-                                rnd.Next(0, 255),
-                                rnd.Next(0, 255),
-                                rnd.Next(0, 255));
-                        matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
-                        matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
-                        matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
-                        swModel.MaterialPropertyValues = matPropVals;
-
-                        swModel.WindowRedraw();
-                    }
-                }
-            }
-
-            vChild = swComp.GetChildren() as object[];
-            for (long i = 0; i <= (vChild.Length - 1); i++)
-            {
-                swChildComp = vChild[i] as SldWorks.Component2;
-                TraverseCompXform(swChildComp, nLevel + 1, setcolor);
-            }
-        }
-
         static void Main(string[] args)
         {
             SldWorks.SldWorks swApp = new SldWorks.SldWorks();
@@ -139,11 +31,11 @@ namespace Solidworks_Test
                 Debug.Print("--- 1. Info --> " + swModel.GetCustomInfoValue("", "Project"));
 
 
-            SldWorks.Configuration swConfig = default(SldWorks.Configuration);
+            SldWorks.Configuration swConfig = default;
             if (swModel.GetConfigurationNames() != null)
                 foreach (var name in swModel.GetConfigurationNames() as string[])
                 {
-                    swConfig = swModel.GetConfigurationByName(name) as SldWorks.Configuration;
+                    swConfig = swModel.GetConfigurationByName(name);
                     var manager = swModel.Extension.CustomPropertyManager[name];
                     string code = manager.Get("Code");
                     var desc = manager.Get("Description");
@@ -151,23 +43,124 @@ namespace Solidworks_Test
                 }
 
 
-            SldWorks.Feature swFeature = swModel.FirstFeature() as SldWorks.Feature;
+            System.Action<SldWorks.Feature, bool, bool> TraverseFeatures = null;
+            TraverseFeatures = new System.Action<SldWorks.Feature, bool, bool>((SldWorks.Feature thisFeature, bool isTopLevel, bool isShowDimension) =>
+            {
+                SldWorks.Feature curFeature = thisFeature;
+
+                while (curFeature != null)
+                {
+                    Debug.Print("--- Feature --> " + curFeature.Name);
+                    if (isShowDimension == true)
+                    {
+                        SldWorks.DisplayDimension thisDisplayDimension = curFeature.GetFirstDisplayDimension();
+
+                        while (thisDisplayDimension != null)
+                        {
+                            SldWorks.Dimension dimension = thisDisplayDimension.GetDimension();
+
+                            Debug.Print($"--- Feature {curFeature.Name} Dimension --> " + thisDisplayDimension.GetNameForSelection() + " --> " + dimension.Value);
+
+                            thisDisplayDimension = curFeature.GetNextDisplayDimension(thisDisplayDimension);
+                        }
+                    }
+
+                    SldWorks.Feature subFeature = curFeature.GetFirstSubFeature();
+                    while (subFeature != null)
+                    {
+                        TraverseFeatures(subFeature, false, false);
+                        subFeature = subFeature.GetNextSubFeature();
+                    }
+
+                    if (isTopLevel)
+                        curFeature = curFeature.GetNextFeature();
+                    else
+                        curFeature = null;
+                }
+            });
+
+            SldWorks.Feature swFeature = swModel.FirstFeature();
             if (swFeature != null)
             {
                 Debug.Print("--- 3. Features ---");
-                TraverseFeatures(swFeature, true);
+                TraverseFeatures(swFeature, true, false);
             }
 
 
-            swConfig = swModel.GetActiveConfiguration() as SldWorks.Configuration;
+            swConfig = swModel.GetActiveConfiguration();
             if (swConfig != null)
             {
+                System.Action<SldWorks.Component2, long, bool> TraverseCompXform = null;
+                TraverseCompXform = ((SldWorks.Component2 swComp, long nLevel, bool setcolor) =>
+                {
+                    object[] vChild;
+                    SldWorks.Component2 swChildComp;
+                    string sPadStr = "";
+                    SldWorks.MathTransform swCompXform;
+
+                    for (long i = 0; i < nLevel; i++)
+                        sPadStr += "*";
+
+                    swCompXform = swComp.Transform2;
+                    SldWorks.ModelDoc2 swModelOfComp = swComp.GetModelDoc2();
+
+                    if (swCompXform != null)
+                    {
+                        try
+                        {
+                            Debug.Print("--- Pad String --> " + sPadStr + " " + swComp.Name2);
+
+                            if (swComp.GetSelectByIDString() == "")
+                                Debug.Print("--- Select ID --> " + swComp.GetSelectByIDString());
+                        }
+                        catch
+                        {
+                            Debug.Print("Exception catched");
+                        }
+
+                        if (swModelOfComp != null)
+                        {
+                            Debug.Print("--- PartNum --> " + swModelOfComp.get_CustomInfo2(swComp.ReferencedConfiguration, "PartNum"));
+                            Debug.Print("--- Name2 --> " + swComp.Name2);
+                            Debug.Print("--- Name --> " + swModelOfComp.GetPathName());
+                            Debug.Print("--- ConfigName --> " + swComp.ReferencedConfiguration);
+                            Debug.Print("--- ComponentRef --> " + swComp.ComponentReference);
+
+                            if (setcolor == true)
+                            {
+                                double[] matPropVals = swModelOfComp.MaterialPropertyValues as double[];
+                                System.Random rnd = new System.Random();
+
+                                var tempC = System.IO.Path.GetFileNameWithoutExtension(swModelOfComp.GetPathName()).Contains("m1") ?
+                                    System.Drawing.Color.Red :
+                                    System.Drawing.Color.FromArgb(
+                                        rnd.Next(0, 255),
+                                        rnd.Next(0, 255),
+                                        rnd.Next(0, 255));
+                                matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
+                                matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
+                                matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
+                                swModelOfComp.MaterialPropertyValues = matPropVals;
+
+                                swModelOfComp.WindowRedraw();
+                            }
+                        }
+                    }
+
+                    vChild = swComp.GetChildren() as object[];
+                    for (long i = 0; i <= (vChild.Length - 1); i++)
+                    {
+                        swChildComp = vChild[i] as SldWorks.Component2;
+                        TraverseCompXform(swChildComp, nLevel + 1, setcolor);
+                    }
+                });
+
                 Debug.Print("--- 4. Active Configuration ---");
-                SldWorks.Component2 swRootComp = swConfig.GetRootComponent() as SldWorks.Component2;
+                SldWorks.Component2 swRootComp = swConfig.GetRootComponent();
                 if (swRootComp != null)
                 {
                     Debug.Print("--- 4.1. Root Component ---");
-                    TraverseCompXform(swRootComp, 0);
+                    TraverseCompXform(swRootComp, 0, false);
                 }
             }
 
@@ -188,7 +181,7 @@ namespace Solidworks_Test
 
                 bool bActSheet = swDraw.ActivateSheet(k3Name);
 
-                SldWorks.Sheet drwSheet = swDraw.GetCurrentSheet() as SldWorks.Sheet;
+                SldWorks.Sheet drwSheet = swDraw.GetCurrentSheet();
                 if (drwSheet != null)
                 {
                     Debug.Print("--- 5.1. Current Sheet ---");
@@ -221,7 +214,7 @@ namespace Solidworks_Test
             if (noteCount > 0)
             {
                 Debug.Print("--- Note Count --> " + noteCount.ToString());
-                SldWorks.Note note = actionView.GetFirstNote() as SldWorks.Note;
+                SldWorks.Note note = actionView.GetFirstNote();
                 if (note != null)
                 {
                     Debug.Print("--- 6.1. Notes ---");
@@ -229,9 +222,9 @@ namespace Solidworks_Test
                     try
                     {
                         Debug.Print((((note.GetAnnotation() as SldWorks.Annotation)
-                        .GetAttachedEntities3()[0] as SldWorks.Entity)
-                        .GetComponent() as SldWorks.Component2)
-                        .Name2);
+                            .GetAttachedEntities3()[0] as SldWorks.Entity)
+                            .GetComponent() as SldWorks.Component2)
+                            .Name2);
                     }
                     catch { };
                     Debug.Print("--- Note --> " + note.GetText());
@@ -268,9 +261,9 @@ namespace Solidworks_Test
             if (swModExt.SelectByID2("Sketch1", "SKETCH", 0, 0, 0, false, 0, null, 0))
             {
                 Debug.Print("--- 8. Traverse Sketch Segment ---");
-                swFeature = modelSel.GetSelectedObject6(1, -1) as SldWorks.Feature;
+                swFeature = modelSel.GetSelectedObject6(1, -1);
                 swModel.EditSketch();
-                var sk = swFeature.GetSpecificFeature2() as SldWorks.Sketch;
+                SldWorks.Sketch sk = swFeature.GetSpecificFeature2();
                 object[] vSketchSeg = sk.GetSketchSegments() as object[];
 
                 SldWorks.SketchSegment swSketchSeg;
@@ -279,7 +272,7 @@ namespace Solidworks_Test
                 {
                     swSketchSeg = tempSeg as SldWorks.SketchSegment;
                     if (swSketchSeg.GetType() != (int)SwConst.swSketchSegments_e.swSketchTEXT && swSketchSeg.ConstructionGeometry == false)
-                        totalLength = totalLength + swSketchSeg.GetLength();
+                        totalLength += swSketchSeg.GetLength();
                 }
 
                 swModel.EditSketch();
@@ -290,7 +283,7 @@ namespace Solidworks_Test
 
             var OnSaveToStorage = new System.Func<int>(() =>
             {
-                System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", true) as System.Runtime.InteropServices.ComTypes.IStream;
+                System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", true);
 
                 byte[] data = System.Text.Encoding.Unicode.GetBytes("Save String");
                 iStr.Write(data, data.Length, System.IntPtr.Zero);
@@ -318,20 +311,18 @@ namespace Solidworks_Test
                     break;
             }
             //swModel.SetSaveFlag();
-            if (!swModel.Save3((int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, ref err, ref warn)) {
+            if (!swModel.Save3((int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, ref err, ref warn))
                 Debug.Print("--- !!! Failed to save model ---> error --> " + err + " warning --> " + warn);
-            } else {
+            else
                 Debug.Print("--- Save Completed ---" /* "--- Completed. Please save file. ---" */);
-            }
 
             Debug.Print("--- 9.1. Read Third Party Data ---");
-            System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", false) as System.Runtime.InteropServices.ComTypes.IStream;
+            System.Runtime.InteropServices.ComTypes.IStream iStr = swModel.IGet3rdPartyStorage("Tool.Name", false);
             if (iStr != null)
             {
                 Debug.Print("--- Got Data ---");
 
-                System.Runtime.InteropServices.ComTypes.STATSTG statstg;
-                iStr.Stat(out statstg, 1 /* STATSFLAG_NONAME */);
+                iStr.Stat(out System.Runtime.InteropServices.ComTypes.STATSTG statstg, 1 /* STATSFLAG_NONAME */);
 
                 long length = statstg.cbSize;
                 byte[] data = new byte[length];
@@ -346,8 +337,7 @@ namespace Solidworks_Test
 
             SldWorks.Frame swFrame = swApp.Frame();
             swFrame.SetStatusBarText("Status Bar Text --> ");
-            SldWorks.UserProgressBar userProgressBar;
-            swApp.GetUserProgressBar(out userProgressBar);
+            swApp.GetUserProgressBar(out SldWorks.UserProgressBar userProgressBar);
             userProgressBar.Start(0, 100, "Status");
 
             int position = 0;
@@ -432,9 +422,7 @@ namespace Solidworks_Test
                     Debug.Print("--- View ---> " + swView.Name);
 
                     if (swBaseView != null)
-                    {
                         Debug.Print("--- Base View --> ", swBaseView.Name);
-                    }
 
                     swView = swView.GetNextView();
                 }
