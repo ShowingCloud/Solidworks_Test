@@ -119,7 +119,8 @@ namespace Solidworks_Test
                         if (swModelOfComp != null)
                         {
                             if (swModelOfComp.GetType() == 1)
-                                Debug.Print("--- Material --> " + (swModelOfComp as SldWorks.PartDoc).GetMaterialPropertyName2("", out string swMateDB));
+                                Debug.Print("--- Material --> " + (swModelOfComp as SldWorks.PartDoc).GetMaterialPropertyName2("", out string swMateDB)
+                                    + " --- Database --> " + swMateDB);
 
                             Debug.Print("--- PartNum --> " + swModelOfComp.get_CustomInfo2(swComp.ReferencedConfiguration, "PartNum"));
                             Debug.Print("--- Name2 --> " + swComp.Name2);
