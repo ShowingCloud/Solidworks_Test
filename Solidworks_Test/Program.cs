@@ -93,15 +93,13 @@ namespace Solidworks_Test
                 System.Action<SldWorks.Component2, long, bool> TraverseCompXform = null;
                 TraverseCompXform = ((SldWorks.Component2 swComp, long nLevel, bool setcolor) =>
                 {
-                    object[] vChild;
                     SldWorks.Component2 swChildComp;
                     string sPadStr = "";
-                    SldWorks.MathTransform swCompXform;
 
                     for (long i = 0; i < nLevel; i++)
                         sPadStr += "*";
 
-                    swCompXform = swComp.Transform2;
+                    SldWorks.MathTransform swCompXform = swComp.Transform2;
                     SldWorks.ModelDoc2 swModelOfComp = swComp.GetModelDoc2();
 
                     if (swCompXform != null)
@@ -110,7 +108,7 @@ namespace Solidworks_Test
                         {
                             Debug.Print("--- Pad String --> " + sPadStr + " " + swComp.Name2);
 
-                            if (swComp.GetSelectByIDString() == "")
+                            if (swComp.GetSelectByIDString() != "")
                                 Debug.Print("--- Select ID --> " + swComp.GetSelectByIDString());
                         }
                         catch
@@ -120,6 +118,9 @@ namespace Solidworks_Test
 
                         if (swModelOfComp != null)
                         {
+                            if (swModelOfComp.GetType() == 1)
+                                Debug.Print("--- Material --> " + (swModelOfComp as SldWorks.PartDoc).GetMaterialPropertyName2("", out string swMateDB));
+
                             Debug.Print("--- PartNum --> " + swModelOfComp.get_CustomInfo2(swComp.ReferencedConfiguration, "PartNum"));
                             Debug.Print("--- Name2 --> " + swComp.Name2);
                             Debug.Print("--- Name --> " + swModelOfComp.GetPathName());
@@ -147,7 +148,7 @@ namespace Solidworks_Test
                         }
                     }
 
-                    vChild = swComp.GetChildren() as object[];
+                    object[] vChild = swComp.GetChildren();
                     for (long i = 0; i <= (vChild.Length - 1); i++)
                     {
                         swChildComp = vChild[i] as SldWorks.Component2;
@@ -410,6 +411,10 @@ namespace Solidworks_Test
                 Debug.Print("--- Moment ZX --> " + massProperties[10]);
                 Debug.Print("--- Moment YZ --> " + massProperties[11]);
             }
+
+
+            /* Bom List functionalities (mostly) merged into TraverseCompXform() */
+
 
             if (swDraw != null)
             {
