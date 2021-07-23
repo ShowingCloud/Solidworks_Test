@@ -90,8 +90,8 @@ namespace Solidworks_Test
             swConfig = swModel.GetActiveConfiguration();
             if (swConfig != null)
             {
-                System.Action<SldWorks.Component2, long, bool> TraverseCompXform = null;
-                TraverseCompXform = ((SldWorks.Component2 swComp, long nLevel, bool setcolor) =>
+                System.Action<SldWorks.Component2, long> TraverseCompXform = null;
+                TraverseCompXform = ((SldWorks.Component2 swComp, long nLevel) =>
                 {
                     SldWorks.Component2 swChildComp;
                     string sPadStr = "";
@@ -127,25 +127,6 @@ namespace Solidworks_Test
                             Debug.Print("--- Name --> " + swModelOfComp.GetPathName());
                             Debug.Print("--- ConfigName --> " + swComp.ReferencedConfiguration);
                             Debug.Print("--- ComponentRef --> " + swComp.ComponentReference);
-
-                            if (setcolor == true)
-                            {
-                                double[] matPropVals = swModelOfComp.MaterialPropertyValues as double[];
-                                System.Random rnd = new System.Random();
-
-                                var tempC = System.IO.Path.GetFileNameWithoutExtension(swModelOfComp.GetPathName()).Contains("m1") ?
-                                    System.Drawing.Color.Red :
-                                    System.Drawing.Color.FromArgb(
-                                        rnd.Next(0, 255),
-                                        rnd.Next(0, 255),
-                                        rnd.Next(0, 255));
-                                matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
-                                matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
-                                matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
-                                swModelOfComp.MaterialPropertyValues = matPropVals;
-
-                                swModelOfComp.WindowRedraw();
-                            }
                         }
                     }
 
@@ -153,7 +134,7 @@ namespace Solidworks_Test
                     for (long i = 0; i <= (vChild.Length - 1); i++)
                     {
                         swChildComp = vChild[i] as SldWorks.Component2;
-                        TraverseCompXform(swChildComp, nLevel + 1, setcolor);
+                        TraverseCompXform(swChildComp, nLevel + 1);
                     }
                 });
 
@@ -162,7 +143,7 @@ namespace Solidworks_Test
                 if (swRootComp != null)
                 {
                     Debug.Print("--- 4.1. Root Component ---");
-                    TraverseCompXform(swRootComp, 0, false);
+                    TraverseCompXform(swRootComp, 0);
                 }
             }
 
@@ -203,7 +184,7 @@ namespace Solidworks_Test
             swModel.ShowNamedView2("*Front", (int)SwConst.swStandardViews_e.swFrontView);
 
 
-            SldWorks.SelectionMgr modelSel = swModel.ISelectionManager;
+            SldWorks.SelectionMgr modelSel = swModel.SelectionManager;
             SldWorks.View actionView = modelSel.GetSelectedObject5(1) as SldWorks.View;
 
             var noteCount = 0;
@@ -415,6 +396,54 @@ namespace Solidworks_Test
 
 
             /* Bom List functionalities (mostly) merged into TraverseCompXform() */
+
+
+            try
+            {
+                for (int i = 1; i < modelSel.GetSelectedObjectCount(); i++)
+                {
+                    SldWorks.Face2 face2 = modelSel.GetSelectedObject6(1, -1);
+                    object[] vFaceProp = swModel.MaterialPropertyValues;
+
+                    object[] vProps = face2.GetMaterialPropertyValues2(1, null);
+                    vProps[0] = 1; // red
+                    vProps[1] = 0;
+                    vProps[2] = 0;
+                    vProps[3] = vFaceProp[3];
+                    vProps[4] = vFaceProp[4];
+                    vProps[5] = vFaceProp[5];
+                    vProps[6] = vFaceProp[6];
+                    vProps[7] = vFaceProp[7];
+                    vProps[8] = vFaceProp[8];
+                    face2.SetMaterialPropertyValues2(vProps, 1, null);
+
+                    vProps = null;
+                    vFaceProp = null;
+                }
+                swModel.ClearSelection2(true);
+                Debug.Print("--- 14. Set Color (Method 1) Completed ---");
+
+                double[] matPropVals = swModel.MaterialPropertyValues;
+                System.Random rnd = new System.Random();
+
+                var tempC = System.IO.Path.GetFileNameWithoutExtension(swModel.GetPathName()).Contains("m1") ?
+                    System.Drawing.Color.Red :
+                    System.Drawing.Color.FromArgb(
+                        rnd.Next(0, 255),
+                        rnd.Next(0, 255),
+                        rnd.Next(0, 255));
+                matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
+                matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
+                matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
+                swModel.MaterialPropertyValues = matPropVals;
+
+                swModel.WindowRedraw();
+                Debug.Print("--- 14.1. Set Color (Method 2) Completed ---");
+            }
+            catch
+            {
+                Debug.Print("--- Set Color Failed ---");
+            }
 
 
             if (swDraw != null)
