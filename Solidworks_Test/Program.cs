@@ -9,13 +9,14 @@ namespace Solidworks_Test
             SldWorks.SldWorks swApp = new SldWorks.SldWorks();
             int err = 0, warn = 0;
 
-            //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\test.IGS", "r", null, ref err);
+            //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\Documents\\SldWorks\\test.IGS", "r", null, ref err);
             SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
-                /* "C:\\Users\\wgq\\myNewPart.SLDPRT", */
-                /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt", */
+                /* "C:\\Users\\wgq\\Documents\\SldWorks\\myNewPart.SLDPRT", */
+                "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",
                 /* "C:\\Users\\wgq\\Source\\Repos\\CSharpAndSolidWorks\\CSharpAndSolidWorks\\TemplateModel\\Measure.sldprt", */
-                "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\routing-pipes\\ball valve with flanges.sldasm",
-                (int)SwConst.swDocumentTypes_e.swDocASSEMBLY,
+                /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\routing-pipes\\ball valve with flanges.sldasm", */
+                /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\advdrawings\\foodprocessor.slddrw", */
+                (int)SwConst.swDocumentTypes_e.swDocPART,
                 (int)SwConst.swOpenDocOptions_e/* .swOpenDocOptions_Silent */.swOpenDocOptions_ReadOnly,
                 null, ref err, ref warn);
             if (swModel == null)
@@ -93,9 +94,7 @@ namespace Solidworks_Test
                 System.Action<SldWorks.Component2, long> TraverseCompXform = null;
                 TraverseCompXform = ((SldWorks.Component2 swComp, long nLevel) =>
                 {
-                    SldWorks.Component2 swChildComp;
                     string sPadStr = "";
-
                     for (long i = 0; i < nLevel; i++)
                         sPadStr += "*";
 
@@ -104,17 +103,9 @@ namespace Solidworks_Test
 
                     if (swCompXform != null)
                     {
-                        try
-                        {
-                            Debug.Print("--- Pad String --> " + sPadStr + " " + swComp.Name2);
-
-                            if (swComp.GetSelectByIDString() != "")
-                                Debug.Print("--- Select ID --> " + swComp.GetSelectByIDString());
-                        }
-                        catch
-                        {
-                            Debug.Print("Exception catched");
-                        }
+                        Debug.Print("--- Pad String --> " + sPadStr + " " + swComp.Name2);
+                        if (swComp.GetSelectByIDString() != "")
+                            Debug.Print("--- Select ID --> " + swComp.GetSelectByIDString());
 
                         if (swModelOfComp != null)
                         {
@@ -133,7 +124,7 @@ namespace Solidworks_Test
                     object[] vChild = swComp.GetChildren();
                     for (long i = 0; i <= (vChild.Length - 1); i++)
                     {
-                        swChildComp = vChild[i] as SldWorks.Component2;
+                        var swChildComp = vChild[i] as SldWorks.Component2;
                         TraverseCompXform(swChildComp, nLevel + 1);
                     }
                 });
@@ -184,8 +175,10 @@ namespace Solidworks_Test
             swModel.ShowNamedView2("*Front", (int)SwConst.swStandardViews_e.swFrontView);
 
 
+            if (swModel.Extension.SelectByID2("Sketch1", "SKETCH", 0, 0, 0, false, 0, null, 0))
+                Debug.Print("--- select succeeded ---");
             SldWorks.SelectionMgr modelSel = swModel.SelectionManager;
-            SldWorks.View actionView = modelSel.GetSelectedObject5(1) as SldWorks.View;
+            SldWorks.View actionView = modelSel.GetSelectedObject6(1, -1) as SldWorks.View;
 
             var noteCount = 0;
             if (actionView != null)
@@ -209,7 +202,10 @@ namespace Solidworks_Test
                             .GetComponent() as SldWorks.Component2)
                             .Name2);
                     }
-                    catch { };
+                    catch
+                    {
+                        Debug.Print("--- !!! Error getting components ---");
+                    };
                     Debug.Print("--- Note --> " + note.GetText());
 
                     //var leaderInfo = note.GetLeaderInfo();
@@ -229,14 +225,14 @@ namespace Solidworks_Test
             {
                 var setRes = swModel.Extension.SetUserPreferenceString(16, 0, "CustomerCS");
                 swApp.SetUserPreferenceIntegerValue((int)SwConst.swUserPreferenceIntegerValue_e.swParasolidOutputVersion, (int)SwConst.swParasolidOutputVersion_e.swParasolidOutputVersion_270);
-                swModExt.SaveAs(@"C:\Users\wgq\export.x_t", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
+                swModExt.SaveAs(@"C:\Users\wgq\Documents\SldWorks\export.x_t", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
                 Debug.Print("--- Part or Assembly Exported ---");
             }
             else if (swModel.GetType() == (int)SwConst.swDocTemplateTypes_e.swDocTemplateTypeDRAWING)
             {
                 swApp.SetUserPreferenceIntegerValue((int)SwConst.swUserPreferenceIntegerValue_e.swDxfVersion, 2);
                 swModel.SetUserPreferenceToggle(196, false);
-                swModExt.SaveAs(@"C:\Users\wgq\export.dxf", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
+                swModExt.SaveAs(@"C:\Users\wgq\Documents\SldWorks\export.dxf", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion, (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn);
                 Debug.Print("--- Drawing Exported ---");
             }
 
@@ -398,54 +394,61 @@ namespace Solidworks_Test
             /* Bom List functionalities (mostly) merged into TraverseCompXform() */
 
 
-            try
+            for (int i = 1; i < modelSel.GetSelectedObjectCount(); i++)
             {
-                for (int i = 1; i < modelSel.GetSelectedObjectCount(); i++)
-                {
-                    SldWorks.Face2 face2 = modelSel.GetSelectedObject6(1, -1);
-                    object[] vFaceProp = swModel.MaterialPropertyValues;
+                SldWorks.Face2 face2 = modelSel.GetSelectedObject6(1, -1);
+                object[] vFaceProp = swModel.MaterialPropertyValues;
 
-                    object[] vProps = face2.GetMaterialPropertyValues2(1, null);
-                    vProps[0] = 1; // red
-                    vProps[1] = 0;
-                    vProps[2] = 0;
-                    vProps[3] = vFaceProp[3];
-                    vProps[4] = vFaceProp[4];
-                    vProps[5] = vFaceProp[5];
-                    vProps[6] = vFaceProp[6];
-                    vProps[7] = vFaceProp[7];
-                    vProps[8] = vFaceProp[8];
-                    face2.SetMaterialPropertyValues2(vProps, 1, null);
+                object[] vProps = face2.GetMaterialPropertyValues2(1, null);
+                vProps[0] = 1; // red
+                vProps[1] = 0;
+                vProps[2] = 0;
+                vProps[3] = vFaceProp[3];
+                vProps[4] = vFaceProp[4];
+                vProps[5] = vFaceProp[5];
+                vProps[6] = vFaceProp[6];
+                vProps[7] = vFaceProp[7];
+                vProps[8] = vFaceProp[8];
+                face2.SetMaterialPropertyValues2(vProps, 1, null);
 
-                    vProps = null;
-                    vFaceProp = null;
-                }
-                swModel.ClearSelection2(true);
-                Debug.Print("--- 14. Set Color (Method 1) Completed ---");
-
-                double[] matPropVals = swModel.MaterialPropertyValues;
-                System.Random rnd = new System.Random();
-
-                var tempC = System.IO.Path.GetFileNameWithoutExtension(swModel.GetPathName()).Contains("m1") ?
-                    System.Drawing.Color.Red :
-                    System.Drawing.Color.FromArgb(
-                        rnd.Next(0, 255),
-                        rnd.Next(0, 255),
-                        rnd.Next(0, 255));
-                matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
-                matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
-                matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
-                swModel.MaterialPropertyValues = matPropVals;
-
-                swModel.WindowRedraw();
-                Debug.Print("--- 14.1. Set Color (Method 2) Completed ---");
+                vProps = null;
+                vFaceProp = null;
             }
-            catch
+            swModel.ClearSelection2(true);
+            Debug.Print("--- 14. Set Color (Method 1) Completed ---");
+
+            double[] matPropVals = swModel.MaterialPropertyValues;
+            System.Random rnd = new System.Random();
+
+            var tempC = System.IO.Path.GetFileNameWithoutExtension(swModel.GetPathName()).Contains("m1") ?
+                System.Drawing.Color.Red :
+                System.Drawing.Color.FromArgb(
+                    rnd.Next(0, 255),
+                    rnd.Next(0, 255),
+                    rnd.Next(0, 255));
+            matPropVals[0] = System.Convert.ToDouble(tempC.R) / 255;
+            matPropVals[1] = System.Convert.ToDouble(tempC.G) / 255;
+            matPropVals[2] = System.Convert.ToDouble(tempC.B) / 255;
+            swModel.MaterialPropertyValues = matPropVals;
+
+            swModel.WindowRedraw();
+            Debug.Print("--- 14.1. Set Color (Method 2) Completed ---");
+
+
+            if (actionView != null)
             {
-                Debug.Print("--- Set Color Failed ---");
+                SldWorks.ModelDoc2 viewModel = actionView.ReferencedDocument;
+                Debug.Print("--- 15. Get Drawing Model --> Path Name --> " + viewModel.GetPathName());
+
+                string stepName = System.IO.Path.GetFileNameWithoutExtension(viewModel.GetPathName());
+                if (viewModel.Extension.SaveAs(@"C:\Users\wgq\Documents\SldWorks\{stepName}.step", (int)SwConst.swSaveAsVersion_e.swSaveAsCurrentVersion,
+                    (int)SwConst.swSaveAsOptions_e.swSaveAsOptions_Silent, null, ref err, ref warn))
+                    Debug.Print("--- 15.1. Export Drawing Model Done ---");
+                else
+                    Debug.Print("--- !!! Export Drawing Model Failed --> error --> " + err + " warning --> " + warn);
             }
 
-    
+
             if (swDraw != null)
             {
                 Debug.Print("--- 99. Views ---");
