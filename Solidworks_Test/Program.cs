@@ -10,15 +10,16 @@ namespace Solidworks_Test
             int err = 0, warn = 0;
 
             //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\Documents\\SldWorks\\test.IGS", "r", null, ref err);
-            SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
-                /* "C:\\Users\\wgq\\Documents\\SldWorks\\myNewPart.SLDPRT", */
-                "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",
-                /* "C:\\Users\\wgq\\Source\\Repos\\CSharpAndSolidWorks\\CSharpAndSolidWorks\\TemplateModel\\Measure.sldprt", */
-                /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\routing-pipes\\ball valve with flanges.sldasm", */
-                /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\advdrawings\\foodprocessor.slddrw", */
-                (int)SwConst.swDocumentTypes_e.swDocPART,
-                (int)SwConst.swOpenDocOptions_e/* .swOpenDocOptions_Silent */.swOpenDocOptions_ReadOnly,
-                null, ref err, ref warn);
+            SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\ncon.stp", "r", null, ref err);
+            //SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
+            //    /* "C:\\Users\\wgq\\Documents\\SldWorks\\myNewPart.SLDPRT", */
+            //    "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\tolanalyst\\offset\\top_plate.sldprt",
+            //    /* "C:\\Users\\wgq\\Source\\Repos\\CSharpAndSolidWorks\\CSharpAndSolidWorks\\TemplateModel\\Measure.sldprt", */
+            //    /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\routing-pipes\\ball valve with flanges.sldasm", */
+            //    /* "C:\\Users\\Public\\Documents\\SOLIDWORKS\\SOLIDWORKS 2020\\samples\\tutorial\\advdrawings\\foodprocessor.slddrw", */
+            //    (int)SwConst.swDocumentTypes_e.swDocPART,
+            //    (int)SwConst.swOpenDocOptions_e/* .swOpenDocOptions_Silent */.swOpenDocOptions_ReadOnly,
+            //    null, ref err, ref warn);
             if (swModel == null)
             {
                 Debug.Print("--- !!! Open File Failed --> error --> " + err + " warning --> " + warn);
@@ -28,10 +29,12 @@ namespace Solidworks_Test
             }
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             if (swModel.GetCustomInfoValue("", "Project") != null)
                 Debug.Print("--- 1. Info --> " + swModel.GetCustomInfoValue("", "Project"));
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             SldWorks.Configuration swConfig = default;
             if (swModel.GetConfigurationNames() != null)
                 foreach (var name in swModel.GetConfigurationNames() as string[])
@@ -80,6 +83,7 @@ namespace Solidworks_Test
                 }
             });
 
+            Debug.Print(System.DateTime.Now.ToString());
             SldWorks.Feature swFeature = swModel.FirstFeature();
             if (swFeature != null)
             {
@@ -129,6 +133,7 @@ namespace Solidworks_Test
                     }
                 });
 
+                Debug.Print(System.DateTime.Now.ToString());
                 Debug.Print("--- 4. Active Configuration ---");
                 SldWorks.Component2 swRootComp = swConfig.GetRootComponent();
                 if (swRootComp != null)
@@ -139,6 +144,7 @@ namespace Solidworks_Test
             }
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             SldWorks.DrawingDoc swDraw = swModel as SldWorks.DrawingDoc;
             if (swDraw != null)
             {
@@ -180,6 +186,8 @@ namespace Solidworks_Test
             SldWorks.SelectionMgr modelSel = swModel.SelectionManager;
             SldWorks.View actionView = modelSel.GetSelectedObject6(1, -1) as SldWorks.View;
 
+
+            Debug.Print(System.DateTime.Now.ToString());
             var noteCount = 0;
             if (actionView != null)
             {
@@ -218,6 +226,7 @@ namespace Solidworks_Test
             }
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             Debug.Print("--- 7. Export ---");
             Debug.Print("--- Model Type --> " + swModel.GetType());
             SldWorks.ModelDocExtension swModExt = swModel.Extension;
@@ -237,6 +246,7 @@ namespace Solidworks_Test
             }
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             if (swModExt.SelectByID2("Sketch1", "SKETCH", 0, 0, 0, false, 0, null, 0))
             {
                 Debug.Print("--- 8. Traverse Sketch Segment ---");
@@ -273,6 +283,8 @@ namespace Solidworks_Test
                 return 0;
             });
 
+
+            Debug.Print(System.DateTime.Now.ToString());
             Debug.Print("--- 9. Write Third Party Data ---");
             switch (swModel.GetType())
             {
@@ -339,6 +351,7 @@ namespace Solidworks_Test
             /* Advanced Component Selection part is intentionally skipped */
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             if (swModel.GetType() == (int)SwConst.swDocumentTypes_e.swDocPART)
             {
                 Debug.Print("--- 11. Bounding Box on Part Doc ---");
@@ -362,6 +375,7 @@ namespace Solidworks_Test
             }
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             swModExt = swModel.Extension;
             SldWorks.Measure swMeasure = swModExt.CreateMeasure();
             swMeasure.ArcOption = 0;
@@ -394,6 +408,7 @@ namespace Solidworks_Test
             /* Bom List functionalities (mostly) merged into TraverseCompXform() */
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             for (int i = 1; i < modelSel.GetSelectedObjectCount(); i++)
             {
                 SldWorks.Face2 face2 = modelSel.GetSelectedObject6(1, -1);
@@ -435,6 +450,7 @@ namespace Solidworks_Test
             Debug.Print("--- 14.1. Set Color (Method 2) Completed ---");
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             if (actionView != null)
             {
                 SldWorks.ModelDoc2 viewModel = actionView.ReferencedDocument;
@@ -449,6 +465,7 @@ namespace Solidworks_Test
             }
 
 
+            Debug.Print(System.DateTime.Now.ToString());
             if (swDraw != null)
             {
                 Debug.Print("--- 99. Views ---");
