@@ -9,6 +9,7 @@ namespace Solidworks_Test
             SldWorks.SldWorks swApp = new SldWorks.SldWorks();
             int err = 0, warn = 0;
 
+            Debug.Print(System.DateTime.Now.ToString());
             //SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\Documents\\SldWorks\\test.IGS", "r", null, ref err);
             SldWorks.ModelDoc2 swModel = swApp.LoadFile4("C:\\Users\\wgq\\OneDrive\\Desktop\\ncon.stp", "r", null, ref err);
             //SldWorks.ModelDoc2 swModel = swApp.OpenDoc6(
